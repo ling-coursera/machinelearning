@@ -1,0 +1,163 @@
+---
+title: "Predict How Well Exercises are Performed Using Personal Activity Data "
+author: "Ling Yao"
+output: html_document
+fontsize: 10 pt
+---
+
+## Executive Summary
+
+A large amount of data about personal activity is available relatively inexpensively from wearable devices.  We investigate how well an activity was performed by the wearer using the activity data.  We use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did barbell lifts, correctly and incorrectly in 5 different ways.
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data Processing
+
+We obtained the data from this source: http://groupware.les.inf.puc-rio.br/har.
+
+```{r cache = TRUE, message=FALSE, warning=FALSE}
+library(randomForest)
+library(rpart)
+
+## download training and test data
+if (!file.exists("./pml-training.csv")) {
+    download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",
+                  destfile="./pml-training.csv")
+}
+
+if (!file.exists("./pml-testing.csv")) {
+    download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",
+                  destfile="./pml-testing.csv")
+}
+
+## load the training and test data
+training <- read.csv("./pml-training.csv")
+testing <- read.csv("./pml-testing.csv")
+```
+
+The test data has only 20 observations, and we noticed that many of the columns comprise entirely NAs.  We need to drop those columns.  We also drop the first 7 columns with housekeeping information, such as user name and timestamps, as they aren't useful predictors for the manner in which the participants did the exercise.  
+
+```{r cache = TRUE, message=FALSE, warning=FALSE}
+## identify the columns with all NAs
+toDrop <- colSums(is.na(testing)) == nrow(testing)
+
+## housekeeping columns
+toDrop[1:7] <- TRUE
+
+## drop the identified columns
+train <- training[, !toDrop]
+test <- testing[, !toDrop]
+
+## check for NAs in datasets
+sum(is.na(train)); sum(is.na(test));
+```
+
+We confirm that no more NAs in the dataset.  Now we are left with 53 columns, including the response variable, "classe" variable in the training set and "problem_id" variable in the test set. 
+
+## Explorary Analysis
+
+Here are the three plots, each with two predictors.
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+
+qplot(roll_belt, yaw_belt, col=classe, data=train)
+qplot(magnet_dumbbell_z, pitch_forearm, col=classe, data=train)
+qplot(accel_dumbbell_y, roll_dumbbell, col=classe, data=train)
+```
+
+It is not obvious from the explorary plots which variables are important, so we will attempt to use all of them
+as predictors.
+
+## Model Building and Evaluation
+
+Using 2-fold cross-validation, we split the training data into training and cross-validation data.
+
+```{r cache = TRUE, message=FALSE, warning=FALSE}
+library(caret)
+
+## split the training data into training and cross-validation data 
+folds <- createFolds(y=train$classe, k=2)
+trn <- train[folds[[1]],]
+cv <- train[folds[[2]],]
+```
+
+We will try out four classifiers:
+
+1. Random Forests algorithm with PCA preprocessing
+2. Random Forests algorithm with no preprocessing
+3. Classification Trees with PCA preprocessing
+4. Classification Trees with no preprocessing
+
+Each model is built on the training data and evaluated on the cross-validation data so we can select the best model.
+
+```{r cache = TRUE, message=FALSE, warning=FALSE, results='hide'}
+library(caret)
+
+set.seed(13234)
+
+## preprocessing with principle components analysis
+preProc <- preProcess(trn[,-53], method="pca", thresh=0.9)
+trnPC <- predict(preProc, trn[,-53])
+cvPC <- predict(preProc, cv[,-53])
+    
+## Random Forests classfier with or without PCA
+rf1 <- randomForest(trn$classe ~ ., data=trnPC)
+rf2 <- randomForest(trn$classe ~ ., data=trn)
+
+## Tree classifier with or without PCA
+tree1 <- rpart(trn$classe ~ ., method = "class", data=trnPC)
+tree2 <- rpart(trn$classe ~ ., method = "class", data=trn)
+
+## compare prediction accuracy on cross-validation data
+confusionMatrix(cv$classe, predict(rf1, cvPC))
+confusionMatrix(cv$classe, predict(rf2, cv))
+confusionMatrix(cv$classe, predict(tree1, cvPC, type="class"))
+confusionMatrix(cv$classe, predict(tree2, cv, type="class"))
+```
+
+The best model is #2: Random Dorests algorithm with no PCA preprocessing of all 52 predictors, and its confusion matrix is:
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+confusionMatrix(cv$classe, predict(rf2, cv))
+```
+
+Then we swap the training and cross-validation data for next iteration of cross-validation, and re-run the four models.
+```{r message=FALSE, warning=FALSE}
+## Swap training and cross-validation data
+trn <- train[folds[[2]],]
+cv <- train[folds[[1]],]
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, results='hide'}
+## preprocessing with principle components analysis
+preProc <- preProcess(trn[,-53], method="pca", thresh=0.9)
+trnPC <- predict(preProc, trn[,-53])
+cvPC <- predict(preProc, cv[,-53])
+    
+## Random Forest classfier with or without PCA
+rf1 <- randomForest(trn$classe ~ ., data=trnPC)
+rf2 <- randomForest(trn$classe ~ ., data=trn)
+
+## Tree classifier with or without PCA
+tree1 <- rpart(trn$classe ~ ., method = "class", data=trnPC)
+tree2 <- rpart(trn$classe ~ ., method = "class", data=trn)
+
+## compare prediction accuracy on cross-validation data
+confusionMatrix(cv$classe, predict(rf1, cvPC))
+confusionMatrix(cv$classe, predict(rf2, cv))
+confusionMatrix(cv$classe, predict(tree1, cvPC, type="class"))
+confusionMatrix(cv$classe, predict(tree2, cv, type="class"))
+```
+
+Again, the best model is #2: Random Forests algorithm with no PCA preprocessing of all 52 predictors, and its confusion matrix is:
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+confusionMatrix(cv$classe, predict(rf2, cv))
+```
+
+## Out-Of-Sample Error
+
+We expect the out of sample error to be 0.875%, which is estimated using the average of the two prediction errors
+from the cross-validation process.
+
