@@ -120,6 +120,9 @@ confusionMatrix(cv$classe, predict(tree2, cv, type="class"))
 The best model is #2: Random Dorests algorithm with no PCA preprocessing of all 52 predictors, and its confusion matrix is:
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
+library(caret)
+library(randomForest)
+
 confusionMatrix(cv$classe, predict(rf2, cv))
 ```
 
@@ -131,6 +134,9 @@ cv <- train[folds[[1]],]
 ```
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, results='hide'}
+library(randomForest)
+library(rpart)
+
 ## preprocessing with principle components analysis
 preProc <- preProcess(trn[,-53], method="pca", thresh=0.9)
 trnPC <- predict(preProc, trn[,-53])
@@ -158,6 +164,5 @@ confusionMatrix(cv$classe, predict(rf2, cv))
 
 ## Out-Of-Sample Error
 
-We expect the out of sample error to be 0.875%, which is estimated using the average of the two prediction errors
-from the cross-validation process.
+We expect the out of sample error to be the average of the two prediction errors,  $1 - Accuracy$ in the confusion matrices, from the cross-validation process.  It is estimated to be 0.875%.
 
