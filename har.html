@@ -113,7 +113,7 @@ sum(is.na(train)); sum(is.na(test));</code></pre>
 </div>
 <div id="explorary-analysis" class="section level2">
 <h2>Explorary Analysis</h2>
-<p>Here are the three plots with three predictors.</p>
+<p>Here are the three plots, each with two predictors.</p>
 <pre class="r"><code>library(ggplot2)
 
 qplot(roll_belt, yaw_belt, col=classe, data=train)</code></pre>
@@ -204,37 +204,37 @@ cv &lt;- train[folds[[1]],]</code></pre>
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 2782    8    0    0    0
+##          A 2781    8    1    0    0
 ##          B   24 1870    5    0    0
-##          C    0   29 1676    5    1
-##          D    0    0   28 1577    3
-##          E    0    0   11    5 1787
+##          C    0   27 1677    7    0
+##          D    0    0   28 1578    2
+##          E    0    0    9    4 1790
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.9879          
-##                  95% CI : (0.9855, 0.9899)
-##     No Information Rate : 0.286           
+##                Accuracy : 0.9883          
+##                  95% CI : (0.9859, 0.9903)
+##     No Information Rate : 0.2859          
 ##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
 ##                                           
-##                   Kappa : 0.9847          
+##                   Kappa : 0.9852          
 ##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9914   0.9806   0.9744   0.9937   0.9978
-## Specificity            0.9989   0.9963   0.9957   0.9962   0.9980
-## Pos Pred Value         0.9971   0.9847   0.9795   0.9807   0.9911
-## Neg Pred Value         0.9966   0.9953   0.9946   0.9988   0.9995
-## Prevalence             0.2860   0.1944   0.1753   0.1618   0.1826
-## Detection Rate         0.2836   0.1906   0.1708   0.1607   0.1821
+## Sensitivity            0.9914   0.9816   0.9750   0.9931   0.9989
+## Specificity            0.9987   0.9963   0.9958   0.9964   0.9984
+## Pos Pred Value         0.9968   0.9847   0.9801   0.9813   0.9928
+## Neg Pred Value         0.9966   0.9956   0.9947   0.9987   0.9998
+## Prevalence             0.2859   0.1942   0.1753   0.1620   0.1827
+## Detection Rate         0.2835   0.1906   0.1709   0.1608   0.1824
 ## Detection Prevalence   0.2844   0.1936   0.1744   0.1639   0.1838
-## Balanced Accuracy      0.9952   0.9885   0.9850   0.9950   0.9979</code></pre>
+## Balanced Accuracy      0.9951   0.9890   0.9854   0.9947   0.9986</code></pre>
 </div>
 <div id="out-of-sample-error" class="section level2">
 <h2>Out-Of-Sample Error</h2>
-<p>We expect the out of sample error to be 0.875%, which is estimated using the average of the two prediction errors from the cross-validation process.</p>
+<p>We expect the out of sample error to be the average of the two prediction errors, <span class="math">\(1 - Accuracy\)</span> in the confusion matrices, from the cross-validation process. It is estimated to be 0.875%.</p>
 </div>
 
 
